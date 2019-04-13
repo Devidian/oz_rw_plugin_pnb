@@ -1,0 +1,8 @@
+name: "Omega Zirkel Planks N Beams (com.vms.PlanksAndBeams)"
+main: de.omegazirkel.risingworld.PNB
+version: 0.6.0
+author: "Maik 'Devidian' Laschober"
+team: "Omega Zirkel"
+description: "PNB Plugin, originally written by 'Maurizio M. Gavioli aka Miwarre'"
+license: EMS
+website: coming soon
