@@ -1,13 +1,19 @@
 ## [Unreleased]
 
+## [0.7.0] - 2019-12-10
+### Added
+- `max` button in the gui now checks ressources available and only sets to maximum resources you have
+### Fixed
+- dependencies updated
+
 ## [0.6.0] - 2019-04-13
 ### Changed
-- Original Plugin nach Maven konvertiert und mit OZ Boilerplate zusammengelegt
-- deutsche Übersetzung angepasst
-- Klasse Msgs entfernt, verwendet nun i18n aus tools
-- Übersetzung wird nun anhand der Spieler Systemsprache ermittelt
-- Braucht kein rwgui wenn `tools >= 0.6.0` vorhanden ist
+- original plugin converted to maven, merged with oz-boilerplate
+- updated German translation
+- class Msgs removed, now using i18n class from tools
+- translation will now use player system language to translate the plugin
+- does not need rwgui with `tools >= 0.6.0`
 ### Added
-- Textur für Schnee
-- Textur für Kohle
-- Textur für Höllenstein
+- snow texture
+- coal texture
+- hellstone texture

@@ -145,8 +145,11 @@ public class PNBGui extends GuiDialogueBox {
 			"PNB_032" // 10 hellstone
 	};
 
+	private PNB pluginInstance = null;
+
 	public PNBGui(Plugin plugin, Player player, String lang) {
 		super(plugin, PNB.t.get("PNB_000"), RWGui.LAYOUT_VERT, null);
+		pluginInstance = (PNB) plugin;
 		setCallback(new DlgHandler());
 		Boolean freeCreative = (Boolean) player.getPermissionValue("creative_freecrafting");
 		free = player.isAdmin() && PNB.freeForAdmin
@@ -230,7 +233,7 @@ public class PNBGui extends GuiDialogueBox {
 		GuiLabel lbl = new GuiLabel(PNB.t.get("PNB_016", lang), 0, 0, false);
 		lbl.setColor(RWGui.ACTIVE_COLOUR);
 		layout.addChild(lbl, DOBUTT_ID);
-		updateImages(lang);
+		updateImages(lang, player);
 	}
 
 	// ********************
@@ -243,7 +246,7 @@ public class PNBGui extends GuiDialogueBox {
 			String lang = player.getSystemLanguage();
 			if (id >= 1 && id <= NUM_OF_IMAGES) {
 				imageSel = id - 1;
-				updateSelected(lang);
+				updateSelected(lang, player);
 				return;
 			}
 			switch (id) {
@@ -257,7 +260,7 @@ public class PNBGui extends GuiDialogueBox {
 				if (textureFirst <= 0)
 					pgUpButt.setVisible(false);
 				pgDnButt.setVisible(true);
-				updateImages(lang);
+				updateImages(lang, player);
 				break;
 			case PGDNBUTT_ID:
 				if (textureFirst + NUM_OF_IMAGES >= NUM_OF_TEXTURES)
@@ -268,7 +271,7 @@ public class PNBGui extends GuiDialogueBox {
 				pgUpButt.setVisible(true);
 				if (textureFirst + imageSel >= NUM_OF_TEXTURES)
 					imageSel = NUM_OF_TEXTURES - textureFirst - 1;
-				updateImages(lang);
+				updateImages(lang, player);
 				break;
 			case PLANKBUTT_ID:
 				type = PNB.PLANK_ID;
@@ -296,26 +299,27 @@ public class PNBGui extends GuiDialogueBox {
 				break;
 			case MINBUTT_ID:
 				quant = 1;
-				updateResources(lang);
+				updateResources(lang, player);
 				break;
 			case MINUSBUTT_ID:
 				quant--;
-				updateResources(lang);
+				updateResources(lang, player);
 				break;
 			case PLUSBUTT_ID:
 				quant++;
-				updateResources(lang);
+				updateResources(lang, player);
 				break;
 			case MAXBUTT_ID:
 				quant = 64;
-				updateResources(lang);
+				updateResources(lang, player);
 				break;
 			case DOBUTT_ID:
 				int variation = image2variation[textureFirst + imageSel];
 				int retVal = PNB.plugin.buy(player, type, variation, quant);
 				switch (retVal) {
 				case PNB.ERR_NO_RESOURCES:
-					player.sendTextMessage(PNB.c.error + PNB.pluginName + ":> " + PNB.c.text + PNB.t.get("PNB_025", lang));
+					player.sendTextMessage(
+							PNB.c.error + PNB.pluginName + ":> " + PNB.c.text + PNB.t.get("PNB_025", lang));
 					break;
 				// case PNB.ERR_GENERIC: // same as default
 				// player.sendTextMessage(Msgs.msg[Msgs.txt_newitem_failed]);
@@ -336,7 +340,8 @@ public class PNBGui extends GuiDialogueBox {
 					push(player, new GuiMessageBox(PNB.plugin, player, PNB.t.get("PNB_000", lang), texts, 0));
 					break;
 				default:
-					player.sendTextMessage(PNB.c.error + PNB.pluginName + ":> " + PNB.c.text + PNB.t.get("PNB_026", lang));
+					player.sendTextMessage(
+							PNB.c.error + PNB.pluginName + ":> " + PNB.c.text + PNB.t.get("PNB_026", lang));
 					break;
 				}
 				break;
@@ -348,7 +353,7 @@ public class PNBGui extends GuiDialogueBox {
 	// PRIVATE UTILITY METHODS
 	// ********************
 
-	private void updateImages(String lang) {
+	private void updateImages(String lang, Player player) {
 		if (textureFirst != textureFirstOld) {
 			for (int i = 0; i < NUM_OF_IMAGES; i++) {
 				if (textureFirst + i >= NUM_OF_TEXTURES) {
@@ -363,26 +368,37 @@ public class PNBGui extends GuiDialogueBox {
 				images[i].setVisible(true);
 			}
 			textureFirstOld = textureFirst;
-			updateSelected(lang);
+			updateSelected(lang, player);
 		}
 	}
 
-	private void updateSelected(String lang) {
+	private void updateSelected(String lang, Player player) {
 		images[imageSelOld].setBorderThickness(0, false);
 		images[imageSel].setBorderThickness(RWGui.BORDER_THICKNESS * 2, false);
 		imageSelOld = imageSel;
-		updateResources(lang);
+		updateResources(lang, player);
 	}
 
-	private void updateResources(String lang) {
-		if (quant < 1)
-			quant = 1;
-		minusButt.setVisible(quant > 1);
-		if (quant > 64)
-			quant = 64;
-		plusButt.setVisible(quant < 64);
-		quantText.setText(Integer.toString(quant));
+	private void updateResources(String lang, Player player) {
+
 		int resIndex = PNB.resourcePerVariation[image2variation[textureFirst + imageSel] - PNB.firstVariation];
+		int itemId = PNB.resourceId[resIndex];
+		int itemVar = PNB.resourceVar[resIndex];
+		int maxResourceAvailable = pluginInstance.countResources(player, itemId, itemVar);
+
+		if (maxResourceAvailable < quant) {
+			quant = maxResourceAvailable;
+		}
+		if (quant < 1) {
+			quant = 1;
+		}
+		if (quant > 64) {
+			quant = 64;
+		}
+		minusButt.setVisible(quant > 1);
+		plusButt.setVisible(quant < 64);
+
+		quantText.setText(Integer.toString(quant));
 		String text = PNB.t.get("PNB_015", lang).replace("PH_RES_NAME", PNB.t.get(resIndex2tIndex[resIndex], lang))
 				.replace("PH_RES_COST", free ? "0" : (quant * PNB.costPerItem) + "");
 

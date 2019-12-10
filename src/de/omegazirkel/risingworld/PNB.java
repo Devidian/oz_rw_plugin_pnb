@@ -2,7 +2,7 @@ package de.omegazirkel.risingworld;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
+// import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ import net.risingworld.api.objects.Player;
 
 public class PNB extends Plugin implements Listener, FileChangeListener {
 
-	static final String pluginVersion = "0.6.0";
+	static final String pluginVersion = "0.7.0";
 	static final String pluginName = "Planks 'n Beams";
 	static final String pluginCMD = "pnb";
 
@@ -142,12 +142,10 @@ public class PNB extends Plugin implements Listener, FileChangeListener {
 
 		// For plugin updates
 		try {
-			PluginChangeWatcher WU = new PluginChangeWatcher(this);
 			File f = new File(getPath());
-			WU.watchDir(f);
-			WU.startListening();
-		} catch (IOException ex) {
-			log.out(ex.getMessage(), 999);
+			PluginChangeWatcher.registerFileChangeListener(this, f);
+		} catch (Exception ex) {
+			log.out(ex.toString(), 911);
 		}
 
 		log.out(pluginName + " Plugin is enabled", 10);
@@ -261,9 +259,47 @@ public class PNB extends Plugin implements Listener, FileChangeListener {
 	}
 
 	/**
+	 * Count the number of resourcces available
+	 *
+	 * @param player
+	 * @param itemId
+	 * @param itemVar
+	 * @return
+	 */
+	public int countResources(Player player, int itemId, int itemVar) {
+		// scan the inventory to collect the total number of resources and the slots
+		// where they are
+		Item item;
+		Inventory inv = player.getInventory();
+		int resources = 0; // the number of resources available in the player inventory
+
+		// return a full stack if there should be no costs.
+		Boolean freeCreative = (Boolean) player.getPermissionValue("creative_freecrafting");
+		if (player.isAdmin() && PNB.freeForAdmin
+				|| player.isCreativeModeEnabled() && freeCreative && PNB.freeForCreative) {
+			return 64;
+		}
+
+		for (int invType = 0; invType < slotTypeValues.length; invType++) {
+			Inventory.SlotType slotType = slotTypeValues[invType];
+			for (int j = 0; j < inv.getSlotCount(slotType); j++) {
+				if ((item = inv.getItem(j, slotType)) == null)
+					continue;
+				// Debug code to find type id and variation
+				// log.out(item.getTypeID()+"-"+item.getVariation());
+				if (item.getTypeID() == itemId && item.getVariation() == itemVar) {
+					resources += item.getStacksize();
+					// sourceSlots.add((invType << 16) + j);
+				}
+			}
+		}
+		return resources;
+	}
+
+	/**
 	 * Gives the player the required items in exchange for resources. Checks the
 	 * player has enough resources in the inventory.
-	 * 
+	 *
 	 * @param player    the target player
 	 * @param type      the type of the items (PLANK_ID, BEAM_ID or PLANKTRI_ID)
 	 * @param variation the item variation (texture: 21 - 212)
@@ -275,8 +311,9 @@ public class PNB extends Plugin implements Listener, FileChangeListener {
 			return ERR_INVALID_PARAM;
 
 		// retrieve the needed resource
-		int itemId = resourceId[resourcePerVariation[variation - firstVariation]];
-		int itemVar = resourceVar[resourcePerVariation[variation - firstVariation]];
+		int resIndex = resourcePerVariation[variation - firstVariation];
+		int itemId = resourceId[resIndex];
+		int itemVar = resourceVar[resIndex];
 		Boolean freeCreative = (Boolean) player.getPermissionValue("creative_freecrafting");
 		int cost = player.isAdmin() && PNB.freeForAdmin
 				|| player.isCreativeModeEnabled() && freeCreative && PNB.freeForCreative ? 0 : quantity * costPerItem;
@@ -292,8 +329,8 @@ public class PNB extends Plugin implements Listener, FileChangeListener {
 				for (int j = 0; j < inv.getSlotCount(slotType); j++) {
 					if ((item = inv.getItem(j, slotType)) == null)
 						continue;
-						// Debug code to find type id and variation
-						// log.out(item.getTypeID()+"-"+item.getVariation());
+					// Debug code to find type id and variation
+					// log.out(item.getTypeID()+"-"+item.getVariation());
 					if (item.getTypeID() == itemId && item.getVariation() == itemVar) {
 						resources += item.getStacksize();
 						sourceSlots.add((invType << 16) + j);
